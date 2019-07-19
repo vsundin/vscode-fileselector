@@ -1,6 +1,6 @@
-# systemhelper README
+# fileselector README
 
-The extension "systemhelper" was written to provide a function to list executables to be run when debugging.
+The extension "fileselector" was written to provide a function to list executables to be run when debugging.
 
 ## Features
 
