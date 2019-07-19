@@ -1,0 +1,79 @@
+{
+	"name": "fileselector",
+	"displayName": "File Selector",
+	"publisher": "vsundin",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/vsundin/vscode-fileselector.git"
+	},
+	"icon": "icon.png",
+	"description": "",
+	"version": "1.0.0",
+	"engines": {
+		"vscode": "^1.29.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onDebug",
+		"onCommand:fileselector.selectfile"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"category": "File Selector",
+				"command": "fileselector.selectfile",
+				"title": "Get full file path"
+			}
+		],
+		"configuration": [
+			{
+				"category":"fileselector",
+				"title": "file.path",
+				"properties": {
+					"fileselector.file.path": {
+						"type": "array",
+						"default": ["C:\\","./"],
+						"description": "The directory where files of the file format 'fileselector.file.filter' exists",
+						"scope": "null"
+					}
+				}
+			},
+			{
+				"category":"fileselector",
+				"title": "file.filter",
+				"properties": {
+					"fileselector.file.filter": {
+						"type": "array",
+						"default": ["exe","exe"],
+						"description": "The format of the file to be selected [\".exe\",\".c\",\".o\",...,]. The format in the array needs to match the corresponding file.path",
+						"scope": "null"
+					}
+				}
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile",
+		"test": "node ./out/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.1.1",
+		"@types/mocha": "^5.2.6",
+		"@types/node": "^10.12.21",
+		"@types/vscode": "^1.29.0",
+		"glob": "^7.1.4",
+		"mocha": "^6.1.4",
+		"typescript": "^3.3.1",
+		"tslint": "^5.12.1",
+		"vscode-test": "^1.0.0-next.0"
+	},
+	"dependencies": {
+		"fs": "0.0.1-security"
+	}
+}
