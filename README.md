@@ -3,6 +3,8 @@
 The extension "fileselector" was written to provide configurable functions which can be executed either through the command palette, 
 or as context menus in the file explorer/file window.
 
+GITHUB https://github.com/vsundin/vscode-fileselector.git
+
 ## Features
 
 The extension functions can either be called through the command palette (`ctrl+shift+p`) `File Selector: Get full file path`,
