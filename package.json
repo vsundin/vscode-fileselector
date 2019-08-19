@@ -8,7 +8,7 @@
 	},
 	"icon": "icon.png",
 	"description": "",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"engines": {
 		"vscode": "^1.29.0"
 	},
@@ -17,39 +17,125 @@
 	],
 	"activationEvents": [
 		"onDebug",
-		"onCommand:fileselector.selectfile"
+		"onCommand:fileselector.selectfile",
+		"onCommand:fileselector.debugselectedfile",
+		"onCommand:fileselector.runexternalcmdonselectedfile"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
 				"category": "File Selector",
-				"command": "fileselector.selectfile",
-				"title": "Get full file path"
-			}
-		],
-		"configuration": [
-			{
-				"category":"fileselector",
-				"title": "file.path",
-				"properties": {
-					"fileselector.file.path": {
-						"type": "array",
-						"default": ["C:\\","./"],
-						"description": "The directory where files of the file format 'fileselector.file.filter' exists",
-						"scope": "null"
-					}
-				}
+				"command": "fileselector.debugselectedfile",
+				"title": "Start Debugging"
 			},
 			{
-				"category":"fileselector",
-				"title": "file.filter",
+				"category": "File Selector",
+				"command": "fileselector.runexternalcmdonselectedfile",
+				"title": "Run external command"
+			}
+		],
+		"menus": {
+			"editor/context": [
+				{
+					"command": "fileselector.runexternalcmdonselectedfile"
+				},
+				{
+					"command": "fileselector.debugselectedfile"
+				}
+			],
+			"explorer/context": [
+				{
+					"command": "fileselector.runexternalcmdonselectedfile"
+				},
+				{
+					"command": "fileselector.debugselectedfile"
+				}
+			]
+		},
+		"configuration": [
+			{
+				"title": "File Selector",
+				"category": "fileselector",
 				"properties": {
-					"fileselector.file.filter": {
-						"type": "array",
-						"default": ["exe","exe"],
-						"description": "The format of the file to be selected [\".exe\",\".c\",\".o\",...,]. The format in the array needs to match the corresponding file.path",
-						"scope": "null"
+					"fileselector": {
+						"type": "object",
+						"properties": {
+							"file": {
+								"properties": {
+									"path": {
+										"type": "array",
+										"default": [
+											"C:\\",
+											"./"
+										],
+										"description": "The directory where files of the file format 'fileselector.file.filter' exists",
+										"scope": "null"
+									},
+									"filter": {
+										"type": "array",
+										"default": [
+											"exe",
+											"exe"
+										],
+										"description": "The format of the file to be selected [\".exe\",\".c\",\".o\",...,]. The format in the array needs to match the corresponding file.path",
+										"scope": "null"
+									}
+								}
+							},
+							"externalCommands": {
+								"type": "array",
+								"default": [
+									{
+										"command": "echo",
+										"args": [
+											"Hello, World!"
+										]
+									}
+								],
+								"description": "An array of commands of syntax '{ \"command\":\"cmd\",\"args\":[\"argument\"] }' which will be execute on a selected file. The argument array are appended after the filename. The variable ${workspaceFolder} is enabled and will be replaced.",
+								"scope": "null"
+							},
+							"debug": {
+								"type": "object",
+								"properties": {
+									"type": {
+										"default": {
+											"py": "python",
+											"exe": "cppvsdbg"
+										},
+										"description": "Debugging type, e.g. {'py':'python'} means files of extension 'py' will use the 'python' debugger.",
+										"scope": "null"
+									}
+								}
+							}
+						},
+						"default": {
+							"debug": {
+								"type": {
+									"py": "python",
+									"exe": "cppvsdbg"
+								}
+							},
+							"externalCommands": [
+								{
+									"command": "echo",
+									"args": [
+										"Hello, World!"
+									]
+								}
+							],
+							"file": {
+								"path": [
+									"C:\\",
+									"./"
+								],
+								"filter": [
+									"exe",
+									"exe"
+								]
+							}
+						}
 					}
 				}
 			}
