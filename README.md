@@ -65,13 +65,9 @@ NOTE!: The lenght of both arrays need to be the same i.e. each path added needs 
 
 Release notes and updates are presented below
 
-### 1.0.0
+### 1.1.1
 
-Initial release of System Helper
-
-### 1.0.1
-
-Changed all single backslashes to double backslashes when returning paths through `${command:fileselector.selectfile}`
+Added ability to use `${workspaceFolder}`, `${file}`, `${relativeFile}`, `${relativeFileDirname}`, `${fileBasename}`, `${fileBasenameNoExtension}`, `${fileDirname}` and `${fileExtname}` as parameters when calling external commands.
 
 ### 1.1.0
 
@@ -99,6 +95,17 @@ whilst settings for what external command to run are made through .e.g.
             }
         ]
 	}
+
+
 ```
+### 1.0.1
+
+Changed all single backslashes to double backslashes when returning paths through `${command:fileselector.selectfile}`
+
+### 1.0.0
+
+Initial release of System Helper
+
+
 
 -----------------------------------------------------------------------------------------------------------

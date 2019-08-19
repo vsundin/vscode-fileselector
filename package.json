@@ -8,7 +8,7 @@
 	},
 	"icon": "icon.png",
 	"description": "",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"engines": {
 		"vscode": "^1.29.0"
 	},
@@ -89,7 +89,7 @@
 									{
 										"command": "echo",
 										"args": [
-											"Hello, World!"
+											"Hello#${relativeFile}#${relativeFileDirname}!"
 										]
 									}
 								],
@@ -121,7 +121,7 @@
 								{
 									"command": "echo",
 									"args": [
-										"Hello, World!"
+										"Hello#${relativeFile}#${relativeFileDirname}!"
 									]
 								}
 							],

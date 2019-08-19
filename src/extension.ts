@@ -105,8 +105,9 @@ export class FileSelector {
 	public static async runExternalCommandOnSelectedFile(caller: vscode.Uri) {
 		let fileselectorConfig = vscode.workspace.getConfiguration('fileselector');
 		let commands:string[] = [];
-		(<Object[]> fileselectorConfig.get('externalCommands')).forEach(command =>{
-			commands.push(Object(command)['command']);
+		(<Object[]> fileselectorConfig.get('externalCommands')).forEach(async (command) =>{
+			let cmd = await FileSelector.replaceEnvironmentVariables(Object(command)['command'],caller);
+			commands.push(cmd);
 		});
 
 		let selectedItem = 0;
@@ -124,7 +125,7 @@ export class FileSelector {
 			let replacedArgs: string[] = [];
 			let args:String[] = (Object(fileselectorConfig.get('externalCommands'))[selectedItem])['args'];
 			let argsString = args.join(" ");
-			let newArgs = await FileSelector.replaceEnvironmentVariables(argsString);
+			let newArgs = await FileSelector.replaceEnvironmentVariables(argsString,caller);
 			let termFunc = function () {
 				let fullCommandToExecute = commandToExecute + " " + caller.fsPath + " " + newArgs;
 				let newTerm: vscode.Terminal;
@@ -154,8 +155,17 @@ export class FileSelector {
 
 	}
 
-	private static async replaceEnvironmentVariables(sentence: string): Promise<string> {
-		let newSentence = sentence.replace("${workspaceFolder}", <string>vscode.workspace.rootPath);
+	private static async replaceEnvironmentVariables(sentence: string,caller: vscode.Uri): Promise<string> {
+		let newSentence = sentence
+		.replace("${workspaceFolder}", <string>vscode.workspace.rootPath)
+		.replace("${file}", caller.fsPath)
+		.replace("${relativeFile}", (caller.fsPath).replace(<string>vscode.workspace.rootPath,""))
+		.replace("${relativeFileDirname}", path.dirname((caller.fsPath)).replace(<string>vscode.workspace.rootPath,""))
+		.replace("${fileBasename}", path.basename(caller.fsPath))
+		.replace("${fileBasenameNoExtension}", path.basename(caller.fsPath,path.extname(caller.fsPath)))
+		.replace("${fileDirname}", path.dirname(caller.fsPath))
+		.replace("${fileExtname}", path.extname(caller.fsPath));
+
 		return newSentence;
 	}
 }
