@@ -8,7 +8,7 @@
 	},
 	"icon": "icon.png",
 	"description": "",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"engines": {
 		"vscode": "^1.29.0"
 	},
@@ -98,23 +98,75 @@
 							},
 							"debug": {
 								"type": "object",
-								"properties": {
-									"type": {
-										"default": {
-											"py": "python",
-											"exe": "cppvsdbg"
-										},
-										"description": "Debugging type, e.g. {'py':'python'} means files of extension 'py' will use the 'python' debugger.",
-										"scope": "null"
+								"default": {
+									"py": {
+										"type": "python",
+										"program": "${file}"
+									},
+									"c": {
+										"type": "cppvsdbg",
+										"program": "${file}"
+									},
+									"cpp": {
+										"type": "cppvsdbg",
+										"program": "${file}"
+									},
+									"exe": {
+										"type": "cppvsdbg",
+										"program": "${file}"
 									}
-								}
+								},
+								"patternProperties": {
+									"^": {
+										"type": "object",
+										"description": "The file extension settings",
+										"properties": {
+											"type": {
+												"type": "string",
+												"default": "python",
+												"description": "The type of debugging configuration (same as in launch.json)"
+											},
+											"program": {
+												"type": "string",
+												"default": "${file}",
+												"description": "Full path to program executable"
+											},
+											"env": {
+												"type": "object",
+												"default": "\"PYTHONPATH\":\"${env:PYTHONPATH};${workspaceFolder}\\SystemTest\\PiTest_framework\\piTest\"",
+												"description": "Environment variables defined as a key value pair. Property ends up being the Environment Variable and the value of the property ends up being the value of the Env Variable."
+											},
+											"envFile": {
+												"type": "string",
+												"default": "${workspaceFolder}/.vscode/path.env",
+												"description": "Absolute path to a file containing environment variable definitions. This file has key value pairs separated by an equals sign per line. E.g. KEY=VALUE"
+											},
+											"cwd": {
+												"type": "string",
+												"default": "${workspaceFolder}",
+												"description": "The working directory of the target."
+											}
+										},
+										"required": [
+											"type",
+											"program"
+										]
+									}
+								},
+								"description": "Debugging settings depending on file extension. The object key is used as selector for the file extension i.e. \"py\":{\"type\":\"python\",\"program\":\"${file}\"}` means file-extension of type 'py' will launch the 'python' debugger and the program which will be debugged is '${file}' i.e. the selected file",
+								"scope": "null"
 							}
 						},
 						"default": {
 							"debug": {
-								"type": {
-									"py": "python",
-									"exe": "cppvsdbg"
+								"example-extension": {
+									"type": "python",
+									"program": "${file}",
+									"envFile": "${workspaceFolder}/.vscode/path.env",
+									"env": {
+										"PYTHONPATH": "${env:PYTHONPATH};${workspaceFolder}\\SystemTest\\PiTest_framework\\piTest"
+									},
+									"cwd": "${workspaceFolder}"
 								}
 							},
 							"externalCommands": [

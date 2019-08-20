@@ -2,6 +2,10 @@
 
 All notable changes to the "systemhelper" extension will be documented in this file.
 
+## [1.1.2]
+
+- Refactoring of debugging calls
+
 ## [1.1.1]
 
 - Added additional variables to be used when running external commands

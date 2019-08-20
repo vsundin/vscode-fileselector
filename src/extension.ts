@@ -85,19 +85,26 @@ export class FileSelector {
 	public static async debugSelectedFile(caller: vscode.Uri) {
 		let workDir: vscode.WorkspaceFolder = (<vscode.WorkspaceFolder[]>vscode.workspace.workspaceFolders)[0];
 		let fileExtension = path.parse(caller.fsPath).ext.replace(".", "");
-		let debugTypeConfig = vscode.workspace.getConfiguration('fileselector.debug.type');
-		let debugType = debugTypeConfig.get(fileExtension);
-		if (debugType === undefined) {
+		let debugTypeConfigs = vscode.workspace.getConfiguration('fileselector.debug');
+		
+		let extensionConfig = debugTypeConfigs[fileExtension];
+		if (extensionConfig === undefined) {
 			vscode.window.showErrorMessage("No debugging alternative available for files of type: [ " + fileExtension + " ]");
 			return;
 		}
 		let debugConfig: vscode.DebugConfiguration = {
 			name: "Generic Debug",
-			type: <string>debugType,
+			type: extensionConfig["type"],
 			request: "launch",
-			program: caller.fsPath,
+			program: await FileSelector.replaceEnvironmentVariables(extensionConfig["program"],caller),
 			stopAtEntry: true
 		};
+		let cwd = await FileSelector.replaceEnvironmentVariables(extensionConfig["cwd"],caller);
+		let env = await FileSelector.replaceEnvironmentVariables(extensionConfig["env"],caller);
+		let envFile = await FileSelector.replaceEnvironmentVariables(extensionConfig["envFile"],caller);
+		if (cwd !== undefined) {debugConfig.cwd = cwd;}
+		if (env !== undefined && env !== "") {debugConfig.env = env;}
+		if (envFile !== undefined && env !== "") {debugConfig.envFile = envFile;}
 		vscode.window.showInformationMessage("Starting debugging of: "+caller.fsPath);
 		vscode.debug.startDebugging(workDir, debugConfig);
 	}
@@ -156,17 +163,22 @@ export class FileSelector {
 	}
 
 	private static async replaceEnvironmentVariables(sentence: string,caller: vscode.Uri): Promise<string> {
-		let newSentence = sentence
-		.replace("${workspaceFolder}", <string>vscode.workspace.rootPath)
-		.replace("${file}", caller.fsPath)
-		.replace("${relativeFile}", (caller.fsPath).replace(<string>vscode.workspace.rootPath,""))
-		.replace("${relativeFileDirname}", path.dirname((caller.fsPath)).replace(<string>vscode.workspace.rootPath,""))
-		.replace("${fileBasename}", path.basename(caller.fsPath))
-		.replace("${fileBasenameNoExtension}", path.basename(caller.fsPath,path.extname(caller.fsPath)))
-		.replace("${fileDirname}", path.dirname(caller.fsPath))
-		.replace("${fileExtname}", path.extname(caller.fsPath));
+		if (typeof sentence === 'string'){
+			let newSentence:string = sentence
+			.replace("${workspaceFolder}", <string>vscode.workspace.rootPath)
+			.replace("${file}", caller.fsPath)
+			.replace("${relativeFile}", (caller.fsPath).replace(<string>vscode.workspace.rootPath,""))
+			.replace("${relativeFileDirname}", path.dirname((caller.fsPath)).replace(<string>vscode.workspace.rootPath,""))
+			.replace("${fileBasename}", path.basename(caller.fsPath))
+			.replace("${fileBasenameNoExtension}", path.basename(caller.fsPath,path.extname(caller.fsPath)))
+			.replace("${fileDirname}", path.dirname(caller.fsPath))
+			.replace("${fileExtname}", path.extname(caller.fsPath));
+			return newSentence;
+		} else {
+			return "";
+		}
 
-		return newSentence;
+
 	}
 }
 

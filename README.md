@@ -67,6 +67,10 @@ NOTE!: The lenght of both arrays need to be the same i.e. each path added needs 
 
 Release notes and updates are presented below
 
+### 1.1.2
+
+Refactoring of debugging calls. It is now possible to depending on file extension possible to select both the type of debugger to launch, and which program i.e. file to debug. For instance `"py":{"type":"python","program":"${file}"}` means file-extension of type 'py' will launch the 'python' debugger and the program which will be debugged is '${file}' i.e. the selected file". It is also possible to add `"env"`,`"envFile"` and `"cwd"`.
+
 ### 1.1.1
 
 Added ability to use `${workspaceFolder}`, `${file}`, `${relativeFile}`, `${relativeFileDirname}`, `${fileBasename}`, `${fileBasenameNoExtension}`, `${fileDirname}` and `${fileExtname}` as parameters when calling external commands.
