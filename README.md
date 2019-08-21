@@ -66,6 +66,9 @@ NOTE!: The lenght of both arrays need to be the same i.e. each path added needs 
 
 Release notes and updates are presented below
 
+### [1.1.4]
+
+- Label of external command is used to name the terminal it executes in (if it exists). Otherwise the command will be used as name of the terminal.
 
 ### [1.1.3]
 

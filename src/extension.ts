@@ -157,6 +157,10 @@ export class FileSelector {
 			}
 			let replacedArgs: string[] = [];
 			let args:String[] = (Object(fileselectorConfig.get('externalCommands'))[selectedItem])['args'];
+			let label:string = fileselectorConfig['externalCommands'][selectedItem]['label'];
+			if (label === undefined){
+				label = commandToExecute;
+			}
 			let argsString = args.join(" ");
 			let newArgs = await this.replaceEnvironmentVariables(argsString,caller);
 			let termFunc = function () {
@@ -166,7 +170,7 @@ export class FileSelector {
 				let termNames:string[] = [];
 				let termInstances: vscode.Terminal[] = [];
 				terminals.forEach(term => {
-					if (term.name === commandToExecute){
+					if (term.name === label){
 						termInstances.push(term);
 						return;
 					}
@@ -174,7 +178,7 @@ export class FileSelector {
 				if(termInstances.length !== 0){
 					newTerm=termInstances[0];
 				} else {
-					newTerm = vscode.window.createTerminal({ name: commandToExecute });
+					newTerm = vscode.window.createTerminal({ name: label });
 				}
 				newTerm.show();
 				vscode.window.showInformationMessage("Running command: "+fullCommandToExecute);

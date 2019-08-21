@@ -1,6 +1,9 @@
 # Change Log
 
 All notable changes to the "systemhelper" extension will be documented in this file.
+## [1.1.4]
+- Label of external command is used to name the terminal it executes in (if it exists). Otherwise the command will be used as name of the terminal.
+
 ## [1.1.3]
 
 - Settings are now explicitly fetched from workspace folder, to avoid problems occuring when a .code-workspace is used.
