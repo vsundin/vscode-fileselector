@@ -3,31 +3,45 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { isUndefined } from 'util';
+import { pathToFileURL } from 'url';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	let fs = new FileSelector();
 	context.subscriptions.push(vscode.commands.registerCommand('fileselector.selectfile', async function (caller) {
-		await FileSelector.selectFile();
+		await fs.selectFile();
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('fileselector.debugselectedfile', async function (caller) {
-		await FileSelector.debugSelectedFile(caller);
+		await fs.debugSelectedFile(caller);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('fileselector.runexternalcmdonselectedfile', async function (caller) {
-		await FileSelector.runExternalCommandOnSelectedFile(caller);
+		await fs.runExternalCommandOnSelectedFile(caller);
 	}));
 }
 
 export class FileSelector {
 
-	private static async selectFileGeneric(config: string, option: string): Promise<string> {
+	workspaceConfig: vscode.WorkspaceConfiguration;
+	fileSelectorConfig: vscode.WorkspaceConfiguration;
+	workDir: vscode.WorkspaceFolder; 
+
+	constructor(){
+		this.workDir = (<vscode.WorkspaceFolder[]>vscode.workspace.workspaceFolders)[0];
+		this.workspaceConfig = vscode.workspace.getConfiguration(undefined,this.workDir.uri);
+		this.fileSelectorConfig = this.workspaceConfig['fileselector'];
+		if (this.fileSelectorConfig === undefined) {
+			vscode.window.showErrorMessage("Config for 'fileselector' missing!");
+		}
+	}
+
+	private async selectFileGeneric(): Promise<string> {
 		var returner = "ERROR";
-		let exePathArray = <string[]>vscode.workspace.getConfiguration(config).get(option);
-		let filterConfigArray = <string[]>vscode.workspace.getConfiguration(config).get("filter");
+		let exePathArray = this.fileSelectorConfig['file']['path'];
+		let filterConfigArray = this.fileSelectorConfig['file']['filter'];
 
 		if (exePathArray.length !== filterConfigArray.length) {
-			vscode.window.showErrorMessage(`length(${config}.${option}) != length(${config}.filter)`);
+			vscode.window.showErrorMessage(`length(fileselector.file.path) != length(fileselector.file.filter)`);
 			return returner;
 		}
 		let index = 0;
@@ -43,7 +57,7 @@ export class FileSelector {
 		let filterConfig = filterConfigArray[index];
 		//vscode.window.showInformationMessage(`[Configuration] [${config}.${option}] : ${exePath}`);
 		if (!exePath.includes(":")) {
-			exePath = path.resolve(<string>vscode.workspace.rootPath, exePath);
+			exePath = path.resolve(this.workDir.uri.fsPath, exePath);
 		}
 		vscode.window.showInformationMessage(`Searching for ${filterConfig}'s in: ${exePath}`);
 		if (!fs.existsSync(exePath)) {
@@ -78,50 +92,62 @@ export class FileSelector {
 	/**
 	 * selectiApplToRun 
 	 */
-	public static async selectFile(): Promise<string> {
-		return await FileSelector.selectFileGeneric('fileselector.file', 'path');
+	public async selectFile(): Promise<string> {
+		return await this.selectFileGeneric();
 	}
 
-	public static async debugSelectedFile(caller: vscode.Uri) {
-		let workDir: vscode.WorkspaceFolder = (<vscode.WorkspaceFolder[]>vscode.workspace.workspaceFolders)[0];
+	public async debugSelectedFile(caller: vscode.Uri) {
 		let fileExtension = path.parse(caller.fsPath).ext.replace(".", "");
-		let debugTypeConfigs = vscode.workspace.getConfiguration('fileselector.debug');
 		
-		let extensionConfig = debugTypeConfigs[fileExtension];
+		let extensionConfig = await this.fileSelectorConfig['debug'][fileExtension];
 		if (extensionConfig === undefined) {
 			vscode.window.showErrorMessage("No debugging alternative available for files of type: [ " + fileExtension + " ]");
 			return;
 		}
-		let debugConfig: vscode.DebugConfiguration = {
-			name: "Generic Debug",
-			type: extensionConfig["type"],
-			request: "launch",
-			program: await FileSelector.replaceEnvironmentVariables(extensionConfig["program"],caller),
-			stopAtEntry: true
-		};
-		let cwd = await FileSelector.replaceEnvironmentVariables(extensionConfig["cwd"],caller);
-		let env = await FileSelector.replaceEnvironmentVariables(extensionConfig["env"],caller);
-		let envFile = await FileSelector.replaceEnvironmentVariables(extensionConfig["envFile"],caller);
-		if (cwd !== undefined) {debugConfig.cwd = cwd;}
-		if (env !== undefined && env !== "") {debugConfig.env = env;}
-		if (envFile !== undefined && env !== "") {debugConfig.envFile = envFile;}
-		vscode.window.showInformationMessage("Starting debugging of: "+caller.fsPath);
-		vscode.debug.startDebugging(workDir, debugConfig);
+		let debugConfigName: string = extensionConfig['name'];
+		//let workspaceDebugConfig = vscode.workspace.getConfiguration(undefined,vscode.Uri.parse("file:///"+path.join(workDir.uri.fsPath,'.vscode','launch.json')));
+		function findElement(arr:Object[], propName:string, propValue:string):Object | undefined {
+			let elem = undefined;
+			arr.forEach(async(element) => {
+				if (Object(element)[propName] === propValue){
+					elem=element;
+					return;
+				}
+			});
+			return elem;
+		}
+		let debugConfig = await findElement(this.workspaceConfig['launch']['configurations'],'name',debugConfigName);
+		if (debugConfig !== undefined) {
+			vscode.window.showInformationMessage("Starting debug config: "+debugConfigName);
+			let newDebugConfiguration:vscode.DebugConfiguration = <vscode.DebugConfiguration> debugConfig;
+			for(var key in newDebugConfiguration){
+				newDebugConfiguration[key] = await this.replaceEnvironmentVariables(newDebugConfiguration[key],caller);
+			}
+			vscode.debug.startDebugging(this.workDir,newDebugConfiguration);
+		}else{
+			vscode.window.showErrorMessage("Debug config named: "+debugConfigName+" does not exist!");
+		}
 	}
 
-	public static async runExternalCommandOnSelectedFile(caller: vscode.Uri) {
+	public async runExternalCommandOnSelectedFile(caller: vscode.Uri) {
 		let fileselectorConfig = vscode.workspace.getConfiguration('fileselector');
 		let commands:string[] = [];
 		(<Object[]> fileselectorConfig.get('externalCommands')).forEach(async (command) =>{
-			let cmd = await FileSelector.replaceEnvironmentVariables(Object(command)['command'],caller);
-			commands.push(cmd);
+			if(Object(command)['label']!== undefined) {
+				commands.push(<string>Object(command)['label']);
+			} else {
+				let cmd = await this.replaceEnvironmentVariables(Object(command)['command'],caller);
+				commands.push(<string>cmd);
+			}
 		});
 
 		let selectedItem = 0;
-		let commandToExecute = await vscode.window.showQuickPick(commands,{ 
+		let commandToExecute="";
+		await vscode.window.showQuickPick(commands,{ 
 			placeHolder: 'Select the directory to search',
-			onDidSelectItem: (item) => {
+			onDidSelectItem: async (item) => {
 				selectedItem = commands.indexOf(item.toString());
+				commandToExecute=<string> await this.replaceEnvironmentVariables(fileselectorConfig['externalCommands'][selectedItem]['command'],caller);		
 			}
 		});
 		if (commandToExecute !== undefined) {
@@ -132,7 +158,7 @@ export class FileSelector {
 			let replacedArgs: string[] = [];
 			let args:String[] = (Object(fileselectorConfig.get('externalCommands'))[selectedItem])['args'];
 			let argsString = args.join(" ");
-			let newArgs = await FileSelector.replaceEnvironmentVariables(argsString,caller);
+			let newArgs = await this.replaceEnvironmentVariables(argsString,caller);
 			let termFunc = function () {
 				let fullCommandToExecute = commandToExecute + " " + caller.fsPath + " " + newArgs;
 				let newTerm: vscode.Terminal;
@@ -162,23 +188,28 @@ export class FileSelector {
 
 	}
 
-	private static async replaceEnvironmentVariables(sentence: string,caller: vscode.Uri): Promise<string> {
+	private async replaceEnvironmentVariables(sentence:string|object, caller: vscode.Uri): Promise<object|string|undefined> {
 		if (typeof sentence === 'string'){
 			let newSentence:string = sentence
-			.replace("${workspaceFolder}", <string>vscode.workspace.rootPath)
+			.replace("${workspaceFolder}", this.workDir.uri.fsPath)
 			.replace("${file}", caller.fsPath)
-			.replace("${relativeFile}", (caller.fsPath).replace(<string>vscode.workspace.rootPath,""))
-			.replace("${relativeFileDirname}", path.dirname((caller.fsPath)).replace(<string>vscode.workspace.rootPath,""))
+			.replace("${relativeFile}", (caller.fsPath).replace(this.workDir.uri.fsPath,""))
+			.replace("${relativeFileDirname}", path.dirname((caller.fsPath)).replace(this.workDir.uri.fsPath,""))
 			.replace("${fileBasename}", path.basename(caller.fsPath))
 			.replace("${fileBasenameNoExtension}", path.basename(caller.fsPath,path.extname(caller.fsPath)))
 			.replace("${fileDirname}", path.dirname(caller.fsPath))
 			.replace("${fileExtname}", path.extname(caller.fsPath));
 			return newSentence;
-		} else {
-			return "";
+		} else if (typeof sentence === 'object') {
+			let newObject:Object = Object(sentence);
+			for(var key in newObject){
+				Object(newObject)[key]= <object> await this.replaceEnvironmentVariables(Object(newObject)[key],caller);	
+			}
+			return newObject;
 		}
-
-
+		else {
+			return sentence;
+		}
 	}
 }
 

@@ -1,10 +1,14 @@
 # Change Log
 
 All notable changes to the "systemhelper" extension will be documented in this file.
+## [1.1.3]
+
+- Settings are now explicitly fetched from workspace folder, to avoid problems occuring when a .code-workspace is used.
+- Also added ability to add label to an external command.
 
 ## [1.1.2]
 
-- Refactoring of debugging calls
+- Refactoring of debugging calls, a named configuration in launch.json depending on file extension is used instead of setting up simplified configurations within the extension itself.
 
 ## [1.1.1]
 

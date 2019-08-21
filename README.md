@@ -28,8 +28,8 @@ The absolute path of the selected file will be returned as a string.
 
 This extension contributes the following settings:
 
-* `fileselector.debug.type`: [String] Debugging type, e.g. {"py":"python"} means files of extension 'py' will use the 'python' debugger. 
-* `fileselector.externalCommands.commands`: [Array]  An array of external commands to execute on the selected file where the syntax is `{"command":"someCommand","args":["arg2","arg3","arg4"}`. The selected filename will be inserted as `arg1`.
+* `fileselector.debug.[file-extension]`: [String] Debugging configuration to select from launch.json, depending on the "name" parameter e.g. `{"py":{"name":"Python: Debug File"}}`. 
+* `fileselector.externalCommands.commands`: [Array]  An array of external commands to execute on the selected file where the syntax is `{"label":"someLabel","command":"someCommand","args":["arg2","arg3","arg4"}`. The selected filename will be inserted as `arg1`.
 * `fileselector.file.path`: [Array] Path to files (relative or absolute) to search (defaults to `["C:\\","./"]` if not set)
 * `fileselector.file.filter`: [Array] Filter to file types (defaults to `["exe","exe"]` if not set)
 
@@ -37,14 +37,13 @@ Example:
 ```
     "fileselector": {
         "debug": {
-            "type": {
-                "py": "python",
-                "exe": "cppvsdbg"
+            "py": {
+                "name":"Pyhon: Debug File"
             }
         },
         "externalCommands": {
             "commands": [
-                {"command":"echo","args":["Hello, World!"]}
+                {"label":"ECHO", "command":"echo","args":["Hello, World!"]}
             ]
         },
         "file": {
@@ -67,9 +66,27 @@ NOTE!: The lenght of both arrays need to be the same i.e. each path added needs 
 
 Release notes and updates are presented below
 
+
+### [1.1.3]
+
+- Settings are now explicitly fetched from workspace folder, to avoid problems occuring when a .code-workspace is used.
+- Ability to add label to external command was added.
+
 ### 1.1.2
 
-Refactoring of debugging calls. It is now possible to depending on file extension possible to select both the type of debugger to launch, and which program i.e. file to debug. For instance `"py":{"type":"python","program":"${file}"}` means file-extension of type 'py' will launch the 'python' debugger and the program which will be debugged is '${file}' i.e. the selected file". It is also possible to add `"env"`,`"envFile"` and `"cwd"`.
+Refactoring of debugging calls. Start of debugging process will now call the configuration in launch.json by name, depending on file extension. The name of the debugging configuration is adjustable depending on file-extension. For instance, in order to call the debugging configuration named 'Python: Debug File', the following configuration needs to be configured.
+```
+    "fileselector": {
+        "debug": {
+            "py": {
+                "name":"Pyhon: Debug File"
+            }
+        }
+    }
+```
+The program in the corresponding debugging configuration will be parsed and it is possible to use parameters such as `${workspaceFolder}`, `${file}`, `${relativeFile}`, `${relativeFileDirname}`, `${fileBasename}`, `${fileBasenameNoExtension}`, `${fileDirname}` and `${fileExtname}` as parameters.
+This means that the same behaviour should be expected when right-clicking and "Start Debugging" as when the debugger is opened and a configuration is manually selected, with the exception that the file-extension will automatically adjust the debugging configuration selected.
+
 
 ### 1.1.1
 
